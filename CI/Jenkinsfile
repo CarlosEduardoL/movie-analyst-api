@@ -1,14 +1,16 @@
 pipeline {
-    agent {
-        docker { image 'node:14-alpine' }
-    }
+    agent any
     environment {
         HOME = '.'
         container = null
         TAG = """${sh(returnStdout: true, script: 'date +%s%N')}"""
+        PROJECT = "zeronetdev/rampup-back"
     }
     stages {
         stage("test"){
+            agent {
+                docker { image 'node:14-alpine' }
+            }
             steps {
                 sh 'npm install'
                 sh 'npm test'
@@ -18,7 +20,7 @@ pipeline {
         stage("build back image"){
             steps {
                 script {
-                    container = docker.build("zeronetdev/rampup-back:${TAG}")
+                    container = docker.build(PROJECT)
                 }
             }
         }
@@ -26,9 +28,14 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        container.push("latest")
+                        container.push("${TAG}")
                     }
                 }
+            }
+        }
+        stage("clean") {
+            steps {
+                sh "for image in $(sudo docker images | grep ${env.PROJECT} | awk '{print \$2}'| uniq); do sudo docker rmi -f \$image; done"
             }
         }
     }
