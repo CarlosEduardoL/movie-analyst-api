@@ -35,7 +35,7 @@ pipeline {
         }
         stage("clean") {
             steps {
-                sh "for image in $(sudo docker images | grep ${env.PROJECT} | awk '{print \$2}'| uniq); do sudo docker rmi -f \$image; done"
+                sh "for image in $(sudo docker images | grep ${env.PROJECT} | awk '{print $2}'| uniq); do sudo docker rmi -f $image; done"
             }
         }
     }
