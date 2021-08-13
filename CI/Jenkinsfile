@@ -2,16 +2,33 @@ pipeline {
     agent {
         docker { image 'node:14-alpine' }
     }
+    environment {
+        HOME = '.'
+        container = null
+        TAG = """${sh(returnStdout: true, script: 'date +%s%N')}"""
+    }
     stages {
         stage("test"){
             steps {
                 sh 'npm install'
                 sh 'npm test'
+                junit '**/test-results.xml'
             }
         }
-        stage("build"){
+        stage("build back image"){
             steps {
-                junit './test-results.xml'
+                script {
+                    container = docker.build("zeronetdev/rampup-back:${TAG}")
+                }
+            }
+        }
+        stage("push image"){
+            steps {
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
+                        container.push("latest")
+                    }
+                }
             }
         }
     }
