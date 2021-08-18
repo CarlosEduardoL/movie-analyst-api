@@ -18,7 +18,7 @@ pipeline {
             }
             post {
                 failure {
-                    script {
+                    environment {
                         failed_stage = "test"
                     }
                 }
@@ -32,7 +32,7 @@ pipeline {
             }
             post {
                 failure {
-                    script {
+                    environment {
                         failed_stage = "build image"
                     }
                 }
@@ -48,7 +48,7 @@ pipeline {
             }
             post {
                 failure {
-                    script {
+                    environment {
                         failed_stage = "push image"
                     }
                 }
@@ -56,12 +56,12 @@ pipeline {
         }
         stage("clean") {
             steps {
-                sh 'for image in \$(sudo docker images | grep ${env.PROJECT} | awk \'{print \$3}\'| uniq); do sudo docker rmi -f \$image; done'
+                sh 'for image in \$(docker images | grep zeronetdev/rampup-back | awk \'{print \$3}\'| uniq); do docker rmi -f \$image; done'
             }
             post {
                 failure {
-                    script {
-                        failed_stage = "clean"
+                    environment {
+                        failed_stage = "clean images"
                     }
                 }
             }
