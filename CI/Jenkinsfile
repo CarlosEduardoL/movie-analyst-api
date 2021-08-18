@@ -66,6 +66,20 @@ pipeline {
                 }
             }
         }
+        stage("trigger CD"){
+            steps {
+                script {
+                    build job: 'back-cd', parameters: [string(name: 'TAG', value: "${BUILD_NUMBER}")]
+                }
+            }
+            post {
+                failure {
+                    script {
+                        failed_stage = "trigger CD"
+                    }
+                }
+            }
+        }
     }
     post {
         failure {
