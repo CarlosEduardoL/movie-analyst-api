@@ -11,11 +11,9 @@ pipeline {
                 sh 'cp -r /root/._ssh /root/.ssh'
                 sh 'chown root -R /root/.ssh'
                 sh 'echo "cd /playbooks" >> script.sh'
-                sh 'echo "ls" >> script.sh'
                 sh "echo \"ansible-playbook -i inventory_aws_ec2.yml -u ubuntu -e tag=${params.TAG} back.yml\" >> script.sh"
                 sh 'chmod +x script.sh'
                 sh './script.sh'
-                sh "echo ${params.TAG}"
             }
         }
     }
