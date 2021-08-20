@@ -2,8 +2,9 @@ pipeline {
     agent any
     environment {
         HOME = '.'
-        container = null
         PROJECT = "zeronetdev/rampup-back"
+        container = null
+        failed_stage = null
     }
     stages {
         stage("test"){
@@ -15,11 +16,25 @@ pipeline {
                 sh 'npm test'
                 junit '**/test-results.xml'
             }
+            post {
+                failure {
+                    script {
+                        failed_stage = "test"
+                    }
+                }
+            }
         }
         stage("build back image"){
             steps {
                 script {
                     container = docker.build(PROJECT)
+                }
+            }
+            post {
+                failure {
+                    script {
+                        failed_stage = "build image"
+                    }
                 }
             }
         }
@@ -31,18 +46,48 @@ pipeline {
                     }
                 }
             }
+            post {
+                failure {
+                    script {
+                        failed_stage = "push image"
+                    }
+                }
+            }
         }
         stage("clean") {
             steps {
-                sh 'for image in \$(sudo docker images | grep ${env.PROJECT} | awk \'{print \$3}\'| uniq); do sudo docker rmi -f \$image; done'
+                sh "for image in \$(docker images | grep ${env.PROJECT} | awk \'{print \$3}\'| uniq); do docker rmi -f \$image; done"
+            }
+            post {
+                failure {
+                    script {
+                        failed_stage = "clean"
+                    }
+                }
+            }
+        }
+        stage("trigger CD"){
+            steps {
+                script {
+                    build job: 'back-cd', parameters: [string(name: 'TAG', value: "${BUILD_NUMBER}")]
+                }
+            }
+            post {
+                failure {
+                    script {
+                        failed_stage = "trigger CD"
+                    }
+                }
             }
         }
     }
     post {
         failure {
-            mail to: 'carlos.lizalda1@gmail.com',
+            script {
+                mail to: 'carlos.lizalda1@gmail.com',
                 subject: "Failed Pipeline: ${currentBuild.fullDisplayName}",
-                body: "Something is wrong with ${env.BUILD_URL}"
+                body: "Something is wrong with ${env.BUILD_URL} on ${failed_stage} stage"
+            }
         }
     }
 }
