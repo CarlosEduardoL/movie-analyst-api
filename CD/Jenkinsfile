@@ -14,7 +14,7 @@ pipeline {
                 sh "echo \"ansible-playbook -i inventory_aws_ec2.yml -u ubuntu -e tag=${params.TAG} back.yml\" >> script.sh"
                 sh 'chmod +x script.sh'
                 sh './script.sh'
-                sh "echo front_tag::${params.TAG} > /tags"
+                sh "echo back_tag::${params.TAG} > /tags"
             }
         }
     }
